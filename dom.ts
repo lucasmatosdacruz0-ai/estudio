@@ -1,0 +1,101 @@
+export const getEl = (id: string): HTMLElement => document.getElementById(id);
+export const getAll = (selector: string): NodeListOf<HTMLElement> => document.querySelectorAll(selector);
+
+// --- Global DOM References ---
+export const componentGrid = getEl('component-grid');
+export const promptDetailsSection = getEl('prompt-details-section');
+export const artDirectionContent = getEl('art-direction-content');
+export const artDirectionPlaceholder = getEl('art-direction-placeholder');
+export const generateDescriptionBtn = getEl('generate-scene-description-btn') as HTMLButtonElement;
+export const intentionSelector = getEl('intention-selector') as HTMLSelectElement;
+export const styleSelector = getEl('style-selector') as HTMLSelectElement;
+export const poseSelector = getEl('pose-selector') as HTMLSelectElement;
+export const promptPreview = getEl('prompt-preview');
+export const promptBaseTextarea = getEl('prompt-base-textarea') as HTMLTextAreaElement;
+export const negativePromptTextarea = getEl('negative-prompt-textarea') as HTMLTextAreaElement;
+export const generateImageBtn = getEl('generate-image-btn') as HTMLButtonElement;
+export const editPanel = getEl('edit-panel');
+export const finalImageDisplay = getEl('final-image-display');
+export const finalImage = getEl('final-image') as HTMLImageElement;
+export const imagePlaceholder = getEl('image-placeholder');
+export const downloadLink = getEl('download-link') as HTMLAnchorElement;
+export const imageLoader = getEl('image-loader');
+export const loaderText = getEl('loader-text');
+export const errorMessage = getEl('error-message');
+export const editPrompt = getEl('edit-prompt') as HTMLInputElement;
+export const regenerateBtn = getEl('regenerate-btn') as HTMLButtonElement;
+export const suggestBtn = getEl('suggest-btn') as HTMLButtonElement;
+export const suggestionsList = getEl('suggestions-list');
+export const variationBtn = getEl('variation-btn') as HTMLButtonElement;
+export const fixCharacterBtn = getEl('fix-character-btn') as HTMLButtonElement;
+export const upscaleBtn = getEl('upscale-btn') as HTMLButtonElement;
+export const genericModal = getEl('generic-modal');
+export const formatSelector = getEl('format-selector');
+export const historyPanel = getEl('history-panel');
+export const versionHistoryContainer = getEl('version-history-container');
+export const inspireBtn = getEl('inspire-btn') as HTMLButtonElement;
+export const inspirationTheme = getEl('inspiration-theme') as HTMLInputElement;
+export const inspirationUpload = getEl('inspiration-upload') as HTMLInputElement;
+export const inspirationPreview = getEl('inspiration-preview') as HTMLImageElement;
+export const inspirationPlaceholder = getEl('inspiration-placeholder');
+export const captionBtn = getEl('caption-btn') as HTMLButtonElement;
+export const captionModal = getEl('caption-modal');
+export const captionList = getEl('caption-list');
+export const captionCloseBtn = getEl('caption-close-btn');
+export const modalTitle = getEl('modal-title');
+export const modalInstruction = getEl('modal-instruction');
+export const modalImageUpload = getEl('modal-image-upload') as HTMLInputElement;
+export const modalImagePreview = getEl('modal-image-preview') as HTMLImageElement;
+export const modalImagePlaceholder = getEl('modal-image-placeholder');
+export const modalTextInput = getEl('modal-text-input') as HTMLTextAreaElement;
+export const modalCancelBtn = getEl('modal-cancel-btn');
+export const modalConfirmBtn = getEl('modal-confirm-btn');
+export const modalOrDivider = getEl('modal-or-divider');
+export const muteBtn = getEl('mute-btn');
+export const volumeSlider = getEl('volume-slider') as HTMLInputElement;
+export const speakerOnIcon = getEl('speaker-on-icon');
+export const speakerOffIcon = getEl('speaker-off-icon');
+export const videoPanel = getEl('video-panel');
+export const videoDurationSelector = getEl('video-duration-selector') as HTMLSelectElement;
+export const videoStyleSelector = getEl('video-style-selector') as HTMLSelectElement;
+export const generateScriptBtn = getEl('generate-script-btn') as HTMLButtonElement;
+export const scriptResultContainer = getEl('script-result-container');
+export const scriptSummaryPt = getEl('script-summary-pt');
+export const scriptPromptEn = getEl('script-prompt-en') as HTMLTextAreaElement;
+export const copyScriptBtn = getEl('copy-script-btn') as HTMLButtonElement;
+export const generateFinalTakeBtn = getEl('generate-final-take-btn') as HTMLButtonElement;
+export const finalTakeDisplay = getEl('final-take-display');
+export const finalTakeLoader = getEl('final-take-loader');
+export const finalTakeImage = getEl('final-take-image') as HTMLImageElement;
+export const postGenerationActions = getEl('post-generation-actions');
+
+// New DOM elements
+export const saveProjectBtn = getEl('save-project-btn') as HTMLButtonElement;
+export const loadProjectsBtn = getEl('load-projects-btn') as HTMLButtonElement;
+export const loadProjectModal = getEl('load-project-modal');
+export const projectList = getEl('project-list');
+export const loadProjectCloseBtn = getEl('load-project-close-btn');
+
+export const magicEditBtn = getEl('magic-edit-btn') as HTMLButtonElement;
+export const magicEditModal = getEl('magic-edit-modal');
+export const magicEditCanvas = getEl('magic-edit-canvas') as HTMLCanvasElement;
+export const magicEditPrompt = getEl('magic-edit-prompt') as HTMLTextAreaElement;
+export const brushSizeSlider = getEl('brush-size') as HTMLInputElement;
+export const magicEditCancelBtn = getEl('magic-edit-cancel-btn');
+export const magicEditConfirmBtn = getEl('magic-edit-confirm-btn');
+
+// New DOM elements for character library
+export const characterLibraryBtn = getEl('character-library-btn') as HTMLButtonElement;
+export const characterLibraryModal = getEl('character-library-modal');
+export const characterList = getEl('character-list');
+export const characterLibraryCloseBtn = getEl('character-library-close-btn');
+export const characterFilterPinned = getEl('character-filter-pinned') as HTMLInputElement;
+export const characterFilterFavorites = getEl('character-filter-favorites') as HTMLInputElement;
+export const newSaveCharacterBtn = getEl('new-save-character-btn') as HTMLButtonElement;
+export const saveCharacterPlaceholder = getEl('save-character-placeholder');
+
+// New DOM elements for save character modal
+export const saveCharacterModal = getEl('save-character-modal');
+export const saveCharacterNameInput = getEl('save-character-name-input') as HTMLInputElement;
+export const saveCharacterConfirmBtn = getEl('save-character-confirm-btn') as HTMLButtonElement;
+export const saveCharacterCancelBtn = getEl('save-character-cancel-btn') as HTMLButtonElement;

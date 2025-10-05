@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estúdio de Moda com IA v23</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        :root {
+            --color-bg-deep: #12121F;
+            --color-bg-med: #1A1A2E;
+            --color-bg-light: #28293E;
+            --color-border: #4D4E61;
+            --color-text-primary: #F0F2F5;
+            --color-text-secondary: #A8B2C2;
+            --color-accent-primary: #7C3AED; /* Violet 600 */
+            --color-accent-primary-hover: #6D28D9; /* Violet 700 */
+            --color-accent-secondary: #2DD4BF; /* Teal 400 */
+            --color-accent-secondary-hover: #14B8A6; /* Teal 500 */
+            --color-error: #F43F5E; /* Rose 500 */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg-deep);
+            background-image: radial-gradient(ellipse at bottom, #1b2735 0%, var(--color-bg-deep) 100%);
+            color: var(--color-text-primary);
+            min-height: 100vh;
+        }
+
+        /* --- Global Elements --- */
+
+        .upload-box {
+            border: 1px solid var(--color-border);
+            transition: all 0.2s ease;
+            background-color: var(--color-bg-med);
+        }
+        .upload-box:hover {
+            border-color: var(--color-accent-primary);
+            background-color: #2c2d42;
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
+        }
+        .upload-box img { object-fit: cover; object-position: center; }
+
+        .loader {
+            border: 4px solid rgba(243, 244, 246, 0.3);
+            border-top: 4px solid var(--color-accent-primary);
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        body textarea, body input[type="text"], body select {
+            background-color: var(--color-bg-med);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            border-radius: 0.5rem; /* rounded-lg */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        body textarea:focus, body input[type="text"]:focus, body select:focus {
+            outline: none;
+            border-color: var(--color-accent-primary);
+            box-shadow: 0 0 0 2px var(--color-accent-primary-hover);
+        }
+
+        /* --- Components --- */
+
+        body .bg-gray-800\/50, body .bg-gray-900\/50 {
+            background-color: var(--color-bg-light);
+            border: 1px solid rgba(77, 78, 97, 0.5);
+            border-radius: 0.75rem; /* rounded-xl */
+        }
+
+        .concept-title {
+            color: #fff;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3), 0 0 10px rgba(192, 132, 252, 0.4);
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+            color: var(--color-text-secondary);
+        }
+        .tab-btn.active {
+            border-color: var(--color-accent-primary);
+            color: var(--color-text-primary);
+        }
+
+        .radio-option input:checked + label {
+            background-color: var(--color-accent-primary);
+            border-color: var(--color-accent-primary);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3);
+        }
+        .radio-option label {
+            transition: all 0.2s ease-in-out;
+            color: var(--color-text-secondary);
+            border-color: var(--color-border);
+            background-color: transparent;
+        }
+        .radio-option label:hover {
+            background-color: var(--color-bg-med);
+            border-color: var(--color-accent-primary);
+            color: var(--color-text-primary);
+        }
+
+        #live-prompt-container {
+            transition: all 0.2s ease;
+            border-color: var(--color-border);
+            background-color: var(--color-bg-med);
+        }
+        #prompt-preview {
+            background-color: rgba(0,0,0,0.2);
+            border-bottom: 1px solid var(--color-border);
+        }
+        #prompt-base-textarea {
+            resize: none;
+            border: none !important;
+            background-color: transparent !important;
+        }
+        #prompt-base-textarea:focus {
+            box-shadow: none !important;
+        }
+
+        /* --- Buttons --- */
+        button {
+            transition: all 0.2s ease;
+        }
+
+        /* Primary Action Button */
+        #generate-image-btn {
+            background: linear-gradient(to right, #7C3AED, #A78BFA);
+            border: none;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+        }
+        #generate-image-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+        }
+        #generate-image-btn:disabled {
+            background: #4B5563;
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Secondary/Tertiary Buttons */
+        #regenerate-btn, #fix-character-btn.locked {
+            background-color: var(--color-accent-primary);
+        }
+        #regenerate-btn:hover, #fix-character-btn.locked:hover {
+            background-color: var(--color-accent-primary-hover);
+        }
+
+        #caption-btn, #inspire-btn, #generate-script-btn, #generate-scene-description-btn {
+            background-color: var(--color-accent-secondary);
+            color: var(--color-bg-deep);
+        }
+        #caption-btn:hover, #inspire-btn:hover, #generate-script-btn:hover, #generate-scene-description-btn:hover {
+            background-color: var(--color-accent-secondary-hover);
+        }
+        
+        #edit-buttons-grid button, #fix-character-btn {
+             background-color: var(--color-bg-med);
+            border: 1px solid var(--color-border);
+        }
+        #edit-buttons-grid button:hover, #fix-character-btn:hover {
+            background-color: var(--color-bg-light);
+            border-color: var(--color-text-secondary);
+        }
+
+        /* Link-style buttons */
+        body .text-teal-400, body .text-indigo-400 { color: #a3a1f7; }
+        body .hover\:text-teal-300:hover, body .hover\:text-indigo-300:hover { color: #c0bfff; }
+
+
+        /* --- Utility & State --- */
+        .modal { transition: opacity 0.3s ease; }
+        .suggestion-item { transition: background-color 0.2s; }
+        .btn-disabled { cursor: not-allowed; background-color: #4b5563 !important; opacity: 0.5; transform: scale(1) !important; box-shadow: none !important; }
+        .history-thumbnail { transition: all 0.2s; border: 2px solid transparent; }
+        .history-thumbnail.active { border-color: var(--color-accent-primary); transform: scale(1.05); }
+        #caption-list, #project-list, #character-list { max-height: 80vh; overflow-y: auto; }
+        #magic-edit-canvas { cursor: crosshair; }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: var(--color-accent-primary); cursor: pointer; border-radius: 50%;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 16px; height: 16px; background: var(--color-accent-primary); cursor: pointer; border-radius: 50%;
+        }
+        
+        input[type=checkbox] {
+            accent-color: var(--color-accent-primary);
+        }
+
+        .info-tooltip { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+        .info-tooltip .tooltip-text {
+            visibility: hidden; width: 220px; background-color: var(--color-bg-light); color: #fff; text-align: center;
+            border-radius: 6px; padding: 8px; position: absolute; z-index: 10;
+            bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s;
+            font-size: 0.75rem; line-height: 1rem; text-wrap: balance; pointer-events: none;
+        }
+        .info-tooltip:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.0); border-color: var(--color-border); }
+            50% { box-shadow: 0 0 10px 4px rgba(124, 58, 237, 0.4); border-color: var(--color-accent-primary); }
+        }
+        .pulse-once {
+            animation: pulse-glow 2.5s infinite;
+            border: 1px solid;
+        }
+        .content-disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            filter: blur(1px);
+            transition: opacity 0.3s, filter 0.3s;
+        }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0"
+      }
+    }
+    </script>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 relative">
+        <div class="absolute top-4 right-4 flex items-center gap-4 text-gray-400">
+             <div class="flex items-center gap-2">
+                <button id="character-library-btn" class="text-sm px-3 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors">Personagens</button>
+                <button id="save-project-btn" class="text-sm px-3 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors">Salvar Projeto</button>
+                <button id="load-projects-btn" class="text-sm px-3 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors">Carregar</button>
+            </div>
+            <div id="sound-controls" class="flex items-center gap-2">
+                <button id="mute-btn" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                    <svg id="speaker-on-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <svg id="speaker-off-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>
+                </button>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" class="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+
+        <header class="text-center mb-10 pt-8">
+            <h1 class="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-fuchsia-500">Estúdio de Moda com IA</h1>
+            <p class="text-lg text-gray-400 mt-2">Crie, edite e refine. O controlo criativo total está nas suas mãos.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Coluna de Entradas (Esquerda) -->
+            <div id="upload-panel" class="flex flex-col gap-6">
+                 <div class="bg-gray-800/50 p-4 rounded-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-200 text-center concept-title">✨ Assistente de Conceitos</h2>
+                    <div class="space-y-2">
+                         <div class="flex gap-2">
+                            <input type="text" id="inspiration-theme" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Digite um tema (ex: verão na praia)">
+                        </div>
+                        <label for="inspiration-upload" class="upload-box w-full h-32 rounded-lg flex items-center justify-center cursor-pointer p-2">
+                            <div id="inspiration-preview-container" class="text-center text-gray-500 w-full h-full">
+                                <img id="inspiration-preview" class="hidden w-full h-full rounded-md" />
+                                <span id="inspiration-placeholder" class="flex items-center justify-center h-full">Opcional: Carregar imagem de inspiração</span>
+                            </div>
+                        </label>
+                        <input type="file" id="inspiration-upload" class="hidden" accept="image/*">
+                        <button id="inspire-btn" class="w-full bg-teal-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-teal-700 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>Gerar Ideia</button>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold mb-6 text-gray-200">1. Componentes da Cena</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="component-grid">
+                        <div class="bg-gray-800/50 p-4 rounded-lg pulse-once" id="char-component-card">
+                            <h3 class="text-lg font-semibold mb-3 text-center text-gray-300 flex justify-center items-center gap-2">
+                                <span>Personagem (Obrigatório)</span>
+                            </h3>
+                            <nav class="flex justify-center mb-3">
+                                <button data-id="char" data-type="image" class="tab-btn active px-4 py-2 text-sm font-medium">Imagem</button>
+                                <button data-id="char" data-type="text" class="tab-btn px-4 py-2 text-sm font-medium">Texto</button>
+                            </nav>
+                            <div class="mb-3">
+                                <h4 class="text-sm font-medium text-gray-400 mb-2 text-center">Enquadramento</h4>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div class="radio-option info-tooltip">
+                                        <input type="radio" id="framing-closeup" name="char-framing" value="retrato (close-up)" class="hidden">
+                                        <label for="framing-closeup" class="block cursor-pointer text-center p-2 border rounded-md w-full">Rosto (Close-up)</label>
+                                        <span class="tooltip-text">Ideal para mostrar detalhes de maquilhagem, expressões, brincos ou colares.</span>
+                                    </div>
+                                    <div class="radio-option info-tooltip">
+                                        <input type="radio" id="framing-medium" name="char-framing" value="plano médio" class="hidden">
+                                        <label for="framing-medium" class="block cursor-pointer text-center p-2 border rounded-md w-full">Da Cintura para Cima</label>
+                                        <span class="tooltip-text">Ideal para exibir camisolas, casacos ou a parte de cima de um vestido.</span>
+                                    </div>
+                                    <div class="radio-option info-tooltip">
+                                        <input type="radio" id="framing-american" name="char-framing" value="plano americano" class="hidden">
+                                        <label for="framing-american" class="block cursor-pointer text-center p-2 border rounded-md w-full">Dos Joelhos para Cima</label>
+                                        <span class="tooltip-text">Mostra um look mais completo, como calças e blusa, sem cortar a pessoa pela metade.</span>
+                                    </div>
+                                    <div class="radio-option info-tooltip">
+                                        <input type="radio" id="framing-full" name="char-framing" value="de corpo inteiro" class="hidden" checked>
+                                        <label for="framing-full" class="block cursor-pointer text-center p-2 border rounded-md w-full">Corpo Inteiro</label>
+                                        <span class="tooltip-text">A melhor opção para exibir o look completo, incluindo sapatos.</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-container h-48">
+                                <label for="char-upload" class="upload-box w-full h-full rounded-lg flex items-center justify-center cursor-pointer p-2 relative group">
+                                    <div class="text-center text-gray-500 w-full h-full">
+                                        <img id="char-preview" class="hidden w-full h-full rounded-md" />
+                                        <span id="char-placeholder" class="flex items-center justify-center h-full">Clique para carregar</span>
+                                    </div>
+                                    <button id="char-remove-btn" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hidden opacity-0 group-hover:opacity-100 transition-opacity z-10 text-xl font-bold leading-none" title="Remover Imagem">&times;</button>
+                                    <div id="char-locked-overlay" class="absolute inset-0 bg-gray-900/80 rounded-lg flex-col items-center justify-center text-center p-4 text-gray-400 hidden">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        <p class="text-xs">Você pode carregar no máximo 3 imagens de componentes para a cena. Para adicionar uma nova, remova uma imagem existente primeiro.</p>
+                                    </div>
+                                </label>
+                                <input type="file" id="char-upload" class="hidden" accept="image/*">
+                                <textarea id="char-textarea" class="hidden w-full h-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5" placeholder="Descreva (opcional)..."></textarea>
+                            </div>
+                            <div id="save-character-container" class="mt-4">
+                                <div id="save-character-placeholder" class="text-center text-sm text-gray-400 p-4 border border-dashed border-gray-600 rounded-lg">
+                                    Adicione uma imagem ou descrição acima para habilitar o salvamento.
+                                </div>
+                                <button id="new-save-character-btn" class="hidden w-full bg-violet-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors">
+                                    Salvar Personagem
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna de Controle e Resultado (Direita) -->
+            <div id="results-panel" class="bg-gray-900/50 p-6 rounded-lg flex flex-col min-h-[600px] gap-6">
+                <div id="control-panel" class="flex flex-col gap-6">
+                    <div id="prompt-details-section">
+                        <h2 class="text-3xl font-bold mb-4 text-gray-200">2. Direção de Arte</h2>
+                        <p id="art-direction-placeholder" class="text-center text-gray-400 mb-4 bg-gray-800/50 p-4 rounded-lg">Forneça um <strong>Personagem</strong> na coluna da esquerda para começar e gerar a descrição da cena automaticamente.</p>
+                        <div id="art-direction-content" class="space-y-4">
+                             <div>
+                                <label for="intention-selector" class="block mb-2 text-sm font-medium text-gray-300">Intenção da Imagem</label>
+                                <select id="intention-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                    <option value="para venda de produto (e-commerce), com fundo limpo e foco total no produto." selected>Venda de Produto (E-commerce)</option>
+                                    <option value="para um lookbook de site, mostrando o modelo em pose natural e elegante.">Modelo para Site (Lookbook)</option>
+                                    <option value="para um anúncio de campanha publicitária, com impacto visual e espaço para texto.">Anúncio de Campanha</option>
+                                    <option value="num estilo Ponto de Vista (POV), como se o espectador estivesse na cena.">Ponto de Vista (POV)</option>
+                                    <option value="com uma abordagem artística e conceitual, focada na emoção e na criatividade.">Foto Artística / Conceitual</option>
+                                    <option value="imitando Conteúdo Gerado pelo Utilizador (UGC), com aspeto autêntico e não profissional.">Estilo UGC</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="style-selector" class="block mb-2 text-sm font-medium text-gray-300">Estilo Visual</label>
+                                <select id="style-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                    <option value="fotografia ultra-realista, 8k, detalhes da pele visíveis, iluminação profissional" selected>Fotorrealismo (Padrão)</option>
+                                    <option value="disparo cinematográfico, iluminação dramática, cor graduada, estilo de filme">Cinematográfico</option>
+                                    <option value="foto de moda analógica, estilo polaroid, grão de filme, cores desbotadas">Look Vintage/Analógico</option>
+                                    <option value="estilo cyberpunk, luzes de néon, elementos futuristas, alta tecnologia">Futurista/Cyberpunk</option>
+                                    <option value="estilo de fantasia épica, iluminação mágica, detalhes ornamentados, atmosfera etérea">Fantasia Épica</option>
+                                    <option value="estilo minimalista, fundo limpo, composição simples, cores neutras">Minimalista e Limpo</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="pose-selector" class="block mb-2 text-sm font-medium text-gray-300">Sugestão de Pose</label>
+                                <select id="pose-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                    <option value="">Nenhuma (deixar a IA decidir)</option>
+                                    <optgroup label="Para Roupas">
+                                        <option value="O modelo posa de corpo inteiro contra uma parede neutra, olhando diretamente para a câmara.">Lookbook Clássico</option>
+                                        <option value="O modelo é capturado a andar naturalmente numa rua, como um flagra de street style.">Street Style Andando</option>
+                                        <option value="O modelo senta-se relaxadamente nos degraus de uma escada.">Sentado em Degraus</option>
+                                        <option value="Modelo de costas, olhando por cima do ombro para a câmara.">Olhar por Cima do Ombro</option>
+                                    </optgroup>
+                                    <optgroup label="Para Óculos">
+                                        <option value="Um close-up do rosto do modelo, de perfil, para destacar o design dos óculos.">Close-up de Perfil</option>
+                                        <option value="O modelo ajusta levemente os óculos com uma das mãos, olhando para a câmara.">Ajustando os Óculos</option>
+                                        <option value="Modelo a olhar para o horizonte, com o sol a refletir nas lentes.">Reflexo do Sol</option>
+                                    </optgroup>
+                                    <optgroup label="Para Joias">
+                                        <option value="A mão do modelo descansa suavemente perto do rosto para mostrar anéis e pulseiras.">Mão Perto do Rosto</option>
+                                        <option value="Um close-up focado no pescoço e ombros para exibir um colar.">Foco no Colar</option>
+                                        <option value="As mãos do modelo seguram delicadamente uma flor, mostrando as joias.">Mãos com Flor</option>
+                                    </optgroup>
+                                    <optgroup label="Para Sapatos">
+                                        <option value="O modelo tem um pé apoiado num degrau ou banco, mostrando o perfil do sapato.">Pé no Degrau</option>
+                                        <option value="O modelo senta-se no chão, a amarrar os atacadores.">Amarrando os Atacadores</option>
+                                        <option value="Close-up dos pés em movimento, a caminhar sobre calçada.">Pés em Movimento</option>
+                                    </optgroup>
+                                     <optgroup label="Para Produtos">
+                                        <option value="Modelo a segurar e a olhar para o produto com um sorriso subtil.">Apresentando o Produto</option>
+                                        <option value="O produto está em primeiro plano, focado, com o modelo desfocado ao fundo.">Produto em Foco</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            
+                            <div class="pt-2">
+                                <button id="generate-scene-description-btn" class="w-full font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-md hover:shadow-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                    ✨ Gerar Descrição da Cena
+                                </button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="prompt-base-textarea" class="block text-sm font-medium text-gray-300">Descrição da Cena</label>
+                                    </div>
+                                    <div id="live-prompt-container" class="bg-gray-700 rounded-lg border border-gray-600 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                                        <div id="prompt-preview" class="text-sm text-gray-400 p-2.5 bg-gray-900/50 rounded-t-lg"></div>
+                                        <textarea id="prompt-base-textarea" rows="4" class="block p-2.5 w-full text-sm text-gray-300 bg-transparent rounded-b-lg border-none focus:ring-0"></textarea>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="negative-prompt-textarea" class="block mb-2 text-sm font-medium text-gray-300">Prompt Negativo</label>
+                                    <textarea id="negative-prompt-textarea" rows="2" class="block p-2.5 w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">rosto deformado, mãos deformadas, múltiplos dedos, má qualidade, baixa resolução, arte de IA, gerado por computador, irreal, pouco nítido, desfocado, cartoon, pintura, feio, duplicado, moldura, bordas pretas, barras pretas</textarea>
+                                </div>
+                                <div class="mt-4">
+                                    <button id="generate-image-btn" class="w-full bg-purple-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-purple-700 transition disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>
+                                        Gerar Imagem
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="image-generation-section" class="mt-6">
+                    <div id="final-image-display" class="bg-gray-800 w-full rounded-lg flex items-center justify-center relative transition-all" style="aspect-ratio: 1/1;">
+                        <div id="image-loader" class="hidden flex-col items-center text-center"><div class="loader mb-3"></div><span id="loader-text"></span></div>
+                        <div id="image-placeholder" class="text-gray-500 flex items-center justify-center h-full">A sua imagem aparecerá aqui</div>
+                        <img id="final-image" class="hidden w-full h-full object-contain rounded-lg" alt="Imagem gerada pela IA">
+                    </div>
+                </div>
+
+                <div id="edit-panel">
+                     <div id="history-panel" class="mt-4 hidden">
+                         <h4 class="text-sm font-semibold mb-2 text-gray-400">Histórico de Versões</h4>
+                         <div id="version-history-container" class="flex items-center gap-2 overflow-x-auto pb-2">
+                         </div>
+                    </div>
+                    
+                    <div id="post-generation-actions" class="flex flex-wrap gap-2 mt-4">
+                        <button id="caption-btn" class="flex-1 bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition">✨ Criar Legenda</button>
+                        <a id="download-link" class="flex-1 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition text-center" download="lookbook-ia.png">Baixar Imagem</a>
+                    </div>
+
+                    <h2 class="text-2xl font-bold mt-8 mb-4 text-gray-200">3. Edição e Refinamento</h2>
+                     <div id="refinement-content" class="space-y-4">
+                        <div id="format-container">
+                            <label class="block mb-2 text-sm font-medium text-gray-300">Formato</label>
+                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs" id="format-selector">
+                                <div class="radio-option"><input type="radio" id="format-square" name="format" value="1:1" class="hidden" checked><label for="format-square" class="block cursor-pointer text-center p-3 border rounded-md">Feed (1:1)</label></div>
+                                <div class="radio-option"><input type="radio" id="format-portrait" name="format" value="4:5" class="hidden"><label for="format-portrait" class="block cursor-pointer text-center p-3 border rounded-md">Feed (4:5)</label></div>
+                                <div class="radio-option"><input type="radio" id="format-story" name="format" value="9:16" class="hidden"><label for="format-story" class="block cursor-pointer text-center p-3 border rounded-md">Story/Reels (9:16)</label></div>
+                                <div class="radio-option"><input type="radio" id="format-landscape" name="format" value="16:9" class="hidden"><label for="format-landscape" class="block cursor-pointer text-center p-3 border rounded-md">YouTube (16:9)</label></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="edit-prompt" class="block text-sm font-medium text-gray-300">Edição por prompt</label>
+                            <div class="flex gap-2 mt-1">
+                                <input type="text" id="edit-prompt" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Ex: 'mude a cor da camisa para azul'">
+                                <button id="regenerate-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Regenerar</button>
+                            </div>
+                        </div>
+                        <div id="suggestions-container">
+                             <button id="suggest-btn" class="text-sm text-indigo-400 hover:text-indigo-300 w-full text-left">Sugerir Edições com IA</button>
+                             <div id="suggestions-list" class="mt-2 text-sm text-gray-400 space-y-1"></div>
+                        </div>
+                    </div>
+
+                    <h2 class="text-2xl font-bold mt-8 mb-4 text-gray-200">4. Edição Avançada</h2>
+                    <div id="edit-buttons-container" class="space-y-2">
+                         <div class="flex flex-wrap gap-2 text-sm">
+                            <button id="variation-btn" class="flex-1 p-2 rounded-lg">Criar Variação</button>
+                            <button id="fix-character-btn" class="flex-1 p-2 rounded-lg">✨ Fixar Rosto</button>
+                            <button id="upscale-btn" class="flex-1 p-2 rounded-lg">Melhorar Qualidade</button>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm" id="edit-buttons-grid">
+                            <button data-modal-type="char" class="modal-trigger p-2 rounded-lg">Trocar Rosto</button>
+                            <button data-modal-type="pose" class="modal-trigger p-2 rounded-lg">Trocar Pose</button>
+                            <button data-modal-type="cloth" class="modal-trigger p-2 rounded-lg">Trocar Roupa</button>
+                            <button data-modal-type="bg" class="modal-trigger p-2 rounded-lg">Trocar Cenário</button>
+                            <button id="magic-edit-btn" class="col-span-full p-2 rounded-lg">🪄 Edição Mágica (Inpainting)</button>
+                        </div>
+                    </div>
+
+                     <!-- FASE 5: VÍDEO -->
+                    <div id="video-panel" class="mt-6">
+                        <h2 class="text-2xl font-bold mt-8 mb-4 text-gray-200">5. Roteiro de Vídeo</h2>
+                        <div class="space-y-4 bg-gray-800/50 p-4 rounded-lg">
+                            <div>
+                                <label for="video-duration-selector" class="block mb-2 text-sm font-medium text-gray-300">Duração do Vídeo</label>
+                                <select id="video-duration-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                    <option value="8">8 segundos (1 cena)</option>
+                                    <option value="16">16 segundos (2 cenas)</option>
+                                    <option value="24">24 segundos (3 cenas)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="video-style-selector" class="block mb-2 text-sm font-medium text-gray-300">Estilo da Cena</label>
+                                <select id="video-style-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                    <option value="um movimento de câmara lento e suave, revelando o produto/look.">Movimento Lento (Reveal)</option>
+                                    <option value="um close-up extremo no produto, com o fundo a mover-se.">Foco no Produto</option>
+                                    <option value="um plano panorâmico do cenário, terminando no personagem.">Plano Panorâmico</option>
+                                    <option value="uma cena de ação dinâmica, com cortes rápidos.">Cena Dinâmica</option>
+                                </select>
+                            </div>
+                            <button id="generate-script-btn" class="w-full bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-700">Gerar Roteiro de Vídeo</button>
+                             <div id="script-result-container" class="hidden space-y-4 mt-4">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-400">Resumo da Cena (Português)</h4>
+                                    <p id="script-summary-pt" class="text-sm p-2 bg-gray-900 rounded-md"></p>
+                                </div>
+                                <div>
+                                    <label for="script-prompt-en" class="block mb-2 text-sm font-medium text-gray-300">Prompt para Vídeo (Inglês)</label>
+                                    <div class="relative">
+                                        <textarea id="script-prompt-en" rows="8" class="block p-2.5 w-full text-sm text-gray-300 bg-gray-900 rounded-lg border border-gray-700" readonly></textarea>
+                                        <button id="copy-script-btn" class="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-bold py-1 px-2 rounded hover:bg-indigo-700">Copiar</button>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <h4 class="text-sm font-semibold text-gray-400 mb-2">Geração da Cena Final</h4>
+                                    <p class="text-xs text-gray-500 mb-2">A sua imagem atual será a cena inicial. Gere a imagem final da cena descrita no roteiro.</p>
+                                    <button id="generate-final-take-btn" class="w-full bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-orange-700">Gerar Cena Final</button>
+                                    <div id="final-take-display" class="bg-gray-900 w-full rounded-lg flex items-center justify-center relative transition-all mt-4" style="aspect-ratio: 1 / 1;">
+                                         <div id="final-take-loader" class="hidden flex-col items-center text-center"><div class="loader mb-3"></div><span>Gerando cena final...</span></div>
+                                         <img id="final-take-image" class="hidden w-full h-full object-contain rounded-lg" alt="Cena final">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="error-message" class="hidden mt-6 bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg text-center"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modais -->
+    <div id="generic-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 id="modal-title" class="text-xl font-bold mb-4"></h3>
+            <div class="space-y-4">
+                <p id="modal-instruction" class="text-sm text-gray-400"></p>
+                <input type="file" id="modal-image-upload" class="hidden" accept="image/*">
+                <label for="modal-image-upload" class="upload-box w-full h-32 rounded-lg flex items-center justify-center cursor-pointer p-2">
+                    <div id="modal-image-preview-container" class="text-center text-gray-500 w-full h-full">
+                        <img id="modal-image-preview" class="hidden w-full h-full rounded-md" />
+                        <span id="modal-image-placeholder" class="flex items-center justify-center h-full">Clique para carregar</span>
+                    </div>
+                </label>
+                <div id="modal-or-divider" class="text-center text-gray-400 text-sm">OU</div>
+                <textarea id="modal-text-input" rows="3" class="w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Descreva aqui..."></textarea>
+            </div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="modal-cancel-btn" class="text-gray-400 hover:text-white">Cancelar</button>
+                <button id="modal-confirm-btn" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <div id="caption-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold mb-4">✨ Sugestões de Legenda</h3>
+            <div id="caption-list" class="space-y-4"></div>
+            <div class="flex justify-end mt-6">
+                <button id="caption-close-btn" class="text-gray-400 hover:text-white">Fechar</button>
+            </div>
+        </div>
+    </div>
+     <div id="load-project-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold mb-4">Carregar Projeto</h3>
+            <div id="project-list" class="space-y-2"></div>
+            <div class="flex justify-end mt-6">
+                <button id="load-project-close-btn" class="text-gray-400 hover:text-white">Fechar</button>
+            </div>
+        </div>
+    </div>
+    <div id="magic-edit-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6">
+            <h3 class="text-xl font-bold mb-4">Edição Mágica (Inpainting)</h3>
+            <p class="text-sm text-gray-400 mb-4">Pinte sobre a área da imagem que deseja alterar e descreva a mudança abaixo.</p>
+            <div class="relative w-full aspect-square mb-4 bg-gray-900 rounded-md">
+                 <canvas id="magic-edit-canvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+            </div>
+            <div class="flex gap-2 items-center mb-4">
+                 <label for="brush-size" class="text-sm text-gray-400">Pincel:</label>
+                 <input type="range" id="brush-size" min="5" max="100" value="40" class="w-32">
+            </div>
+            <textarea id="magic-edit-prompt" rows="2" class="w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Descreva a sua alteração. Ex: 'adicionar um colar de pérolas'"></textarea>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="magic-edit-cancel-btn" class="text-gray-400 hover:text-white">Cancelar</button>
+                <button id="magic-edit-confirm-btn" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700">Aplicar Edição</button>
+            </div>
+        </div>
+    </div>
+    <div id="character-library-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl p-6 flex flex-col h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                 <h3 class="text-xl font-bold">Biblioteca de Personagens</h3>
+                 <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" id="character-filter-pinned" class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-violet-600 focus:ring-violet-500">
+                        <label for="character-filter-pinned">Fixados</label>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" id="character-filter-favorites" class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-violet-600 focus:ring-violet-500">
+                        <label for="character-filter-favorites">Favoritos</label>
+                    </div>
+                    <button id="character-library-close-btn" class="text-2xl leading-none text-gray-400 hover:text-white">&times;</button>
+                 </div>
+            </div>
+            <div id="character-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto flex-grow p-1">
+                <!-- Character cards will be inserted here -->
+            </div>
+        </div>
+    </div>
+    <div id="save-character-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6">
+            <h3 class="text-xl font-bold mb-4">Salvar Personagem</h3>
+            <div class="space-y-4">
+                <label for="save-character-name-input" class="block text-sm font-medium text-gray-300">Nome do Personagem</label>
+                <input type="text" id="save-character-name-input" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Digite um nome...">
+            </div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="save-character-cancel-btn" class="text-gray-400 hover:text-white">Cancelar</button>
+                <button id="save-character-confirm-btn" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module" src="index.tsx"></script>
+</body>
+</html>
