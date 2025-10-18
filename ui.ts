@@ -5,9 +5,66 @@ let magicEditContext: CanvasRenderingContext2D;
 let isDrawing = false;
 let brushSize = 40;
 
+// --- Toast Notifications ---
+let toastIdCounter = 0;
+
+export function showToast(message: string, type: 'loading' | 'success' | 'error', duration?: number): string {
+    const id = `toast-${toastIdCounter++}`;
+    const toast = document.createElement('div');
+    toast.id = id;
+    toast.className = `toast toast-${type}`;
+    
+    let icon = '';
+    if (type === 'loading') {
+        icon = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`;
+    }
+    // Icons for success/error can be added here
+    
+    toast.innerHTML = `${icon}<span>${message}</span>`;
+    
+    dom.toastContainer.appendChild(toast);
+    
+    if (duration) {
+        setTimeout(() => hideToast(id), duration);
+    }
+    
+    return id;
+}
+
+export function hideToast(id: string) {
+    const toast = dom.getEl(id);
+    if (toast) {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300); // Corresponds to CSS transition duration
+    }
+}
+
+
 // --- UI Logic ---
 
+function createUploader(container: HTMLElement, prefix: string, index: number, sizeClass: string) {
+    const uploader = document.createElement('div');
+    uploader.className = 'w-full';
+    uploader.innerHTML = `
+        <label for="${prefix}-upload-${index}" class="upload-box ${sizeClass} mx-auto rounded-lg flex items-center justify-center cursor-pointer p-1 relative group">
+            <div class="text-center text-gray-500 w-full h-full">
+                <img id="${prefix}-preview-${index}" class="hidden w-full h-full rounded-md" />
+                <span id="${prefix}-placeholder-${index}" class="flex items-center justify-center h-full text-2xl text-gray-600">+</span>
+            </div>
+            <button id="${prefix}-remove-btn-${index}" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center hidden opacity-0 group-hover:opacity-100 transition-opacity z-10 text-lg font-bold leading-none" title="Remover Imagem">&times;</button>
+        </label>
+        <input type="file" id="${prefix}-upload-${index}" data-index="${index}" class="hidden" accept="image/*">
+    `;
+    container.appendChild(uploader);
+}
+
 export function initializeUI() {
+    // Create simple image upload boxes
+    for (let i = 0; i < 3; i++) {
+        createUploader(dom.simpleImageUploadsContainer, 'simple', i, 'w-24 h-24');
+        createUploader(dom.quickEditImageUploadsContainer, 'quick-edit', i, 'w-20 h-20');
+    }
+
     Object.keys(components).filter(id => id !== 'char').forEach(id => {
         const componentData = components[id];
         const element = document.createElement('div');
@@ -29,12 +86,8 @@ export function initializeUI() {
         } else {
             element.innerHTML = `
                 <h3 class="text-lg font-semibold mb-3 text-center text-gray-300">${componentData.title}</h3>
-                <nav class="flex justify-center mb-3">
-                    <button data-id="${id}" data-type="image" class="tab-btn active px-4 py-2 text-sm font-medium">Imagem</button>
-                    <button data-id="${id}" data-type="text" class="tab-btn px-4 py-2 text-sm font-medium">Texto</button>
-                </nav>
-                <div class="input-container h-48">
-                    <label for="${id}-upload" class="upload-box w-full h-full rounded-lg flex items-center justify-center cursor-pointer p-2 relative group">
+                <div class="space-y-3">
+                    <label for="${id}-upload" class="upload-box w-full h-40 rounded-lg flex items-center justify-center cursor-pointer p-2 relative group">
                         <div class="text-center text-gray-500 w-full h-full">
                             <img id="${id}-preview" class="hidden w-full h-full rounded-md" />
                             <span id="${id}-placeholder" class="flex items-center justify-center h-full">Clique para carregar</span>
@@ -46,7 +99,7 @@ export function initializeUI() {
                         </div>
                     </label>
                     <input type="file" id="${id}-upload" class="hidden" accept="image/*">
-                    <textarea id="${id}-textarea" class="hidden w-full h-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5" placeholder="Descreva (opcional)..."></textarea>
+                    <textarea id="${id}-textarea" rows="2" class="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5" placeholder="Descreva (opcional)..."></textarea>
                 </div>`;
         }
         dom.componentGrid.appendChild(element);
@@ -55,15 +108,52 @@ export function initializeUI() {
     setupMagicEditCanvas();
 }
 
-export function switchInputType(id: string, type: string, clickedButton: HTMLElement) {
-    const card = clickedButton.closest('.bg-gray-800\\/50');
-    card.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    clickedButton.classList.add('active');
-    const uploadBox = card.querySelector(`label[for="${id}-upload"]`);
-    const textarea = card.querySelector(`#${id}-textarea`);
-    uploadBox.classList.toggle('hidden', type !== 'image');
-    textarea.classList.toggle('hidden', type === 'image');
+export function clearSimpleImagePreview(index: number) {
+    const preview = dom.getEl(`simple-preview-${index}`) as HTMLImageElement;
+    const placeholder = dom.getEl(`simple-placeholder-${index}`);
+    const removeBtn = dom.getEl(`simple-remove-btn-${index}`);
+    const uploadInput = dom.getEl(`simple-upload-${index}`) as HTMLInputElement;
+
+    preview.src = '';
+    preview.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    removeBtn.classList.add('hidden');
+    uploadInput.value = '';
 }
+
+export function updateSimpleImagePreview(index: number, src: string) {
+    const preview = dom.getEl(`simple-preview-${index}`) as HTMLImageElement;
+    const placeholder = dom.getEl(`simple-placeholder-${index}`);
+    const removeBtn = dom.getEl(`simple-remove-btn-${index}`);
+    preview.src = src;
+    preview.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+    removeBtn.classList.remove('hidden');
+}
+
+export function clearQuickEditImagePreview(index: number) {
+    const preview = dom.getEl(`quick-edit-preview-${index}`) as HTMLImageElement;
+    const placeholder = dom.getEl(`quick-edit-placeholder-${index}`);
+    const removeBtn = dom.getEl(`quick-edit-remove-btn-${index}`);
+    const uploadInput = dom.getEl(`quick-edit-upload-${index}`) as HTMLInputElement;
+
+    preview.src = '';
+    preview.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    removeBtn.classList.add('hidden');
+    uploadInput.value = '';
+}
+
+export function updateQuickEditImagePreview(index: number, src: string) {
+    const preview = dom.getEl(`quick-edit-preview-${index}`) as HTMLImageElement;
+    const placeholder = dom.getEl(`quick-edit-placeholder-${index}`);
+    const removeBtn = dom.getEl(`quick-edit-remove-btn-${index}`);
+    preview.src = src;
+    preview.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+    removeBtn.classList.remove('hidden');
+}
+
 
 export function clearComponentPreview(id: string) {
     const preview = dom.getEl(`${id}-preview`) as HTMLImageElement;
@@ -127,10 +217,14 @@ export function updateInspirationPreview(src: string) {
 export function checkPrompt() {
     const hasPrompt = dom.promptBaseTextarea.value.trim() !== '';
     dom.generateImageBtn.disabled = !hasPrompt;
+    if (dom.quickGenerateImageBtn) {
+        dom.quickGenerateImageBtn.disabled = !hasPrompt;
+    }
 }
 
 export function updateArtDirectionAccess() {
-    const charProvided = state.char.image || state.char.text.trim();
+    // FIX: Ensure charProvided is a boolean for classList.toggle
+    const charProvided = !!(state.char.image || state.char.text.trim());
     dom.artDirectionContent.classList.toggle('content-disabled', !charProvided);
     dom.artDirectionPlaceholder.classList.toggle('hidden', charProvided);
     
@@ -157,7 +251,16 @@ export function checkInspirationReady(){
 
 export function setGenerationState(isGenerating: boolean) {
     state.isGenerating = isGenerating;
-    const buttons = [dom.generateDescriptionBtn, dom.generateImageBtn, dom.regenerateBtn, dom.variationBtn, dom.fixCharacterBtn, dom.upscaleBtn, dom.suggestBtn, dom.inspireBtn, dom.captionBtn, dom.generateScriptBtn, dom.generateFinalTakeBtn, dom.magicEditBtn, ...dom.getAll('.modal-trigger')];
+    const buttons = [
+        dom.generateDescriptionBtn, dom.generateImageBtn, dom.regenerateBtn, dom.variationBtn, 
+        dom.fixCharacterBtn, dom.upscaleBtn, dom.suggestBtn, dom.inspireBtn, dom.captionBtn, 
+        dom.generateScriptBtn, dom.generateFinalTakeBtn, dom.magicEditBtn, 
+        dom.quickGenerateImageBtn, dom.quickRegenerateBtn, dom.quickVariationBtn, 
+        dom.quickFixCharacterBtn, dom.quickUpscaleBtn, dom.quickSuggestBtn, 
+        dom.quickMagicEditBtn, dom.quickCaptionBtn, dom.improvePromptBtn, dom.structurePromptBtn,
+        dom.improveTextBtn, dom.quickImproveTextBtn, dom.applyTextBtn, dom.quickApplyTextBtn,
+        ...dom.getAll('.modal-trigger')
+    ];
     buttons.forEach(btn => {
         if(btn) {
             (btn as HTMLButtonElement).disabled = isGenerating;
@@ -167,49 +270,45 @@ export function setGenerationState(isGenerating: boolean) {
      if(!isGenerating) {
         updateArtDirectionAccess();
         checkInspirationReady();
-        updatePostGenerationButtons(state.versionHistory.length > 0);
+        updatePostGenerationButtons(state.versionHistory.length > 0, state.quickCreationResult.base64 != null);
     }
 }
 
-export function updatePostGenerationButtons(isEnabled: boolean) {
-    const sectionsToToggle = [
-        dom.postGenerationActions,
-        dom.getEl('refinement-content'),
-        dom.getEl('edit-buttons-container'),
-        dom.videoPanel,
-    ];
-    sectionsToToggle.forEach(section => section?.classList.toggle('content-disabled', !isEnabled));
-    
-    const buttons = [dom.captionBtn, dom.downloadLink, dom.regenerateBtn, dom.suggestBtn, dom.variationBtn, dom.fixCharacterBtn, dom.upscaleBtn, dom.generateScriptBtn, dom.generateFinalTakeBtn, dom.magicEditBtn, ...dom.getAll('.modal-trigger')];
-    buttons.forEach(btn => {
+export function updatePostGenerationButtons(isAdvancedEnabled: boolean, isQuickEnabled: boolean) {
+    // Advanced Panel
+    const advancedSections = [dom.postGenerationActions, dom.getEl('refinement-content'), dom.getEl('edit-buttons-container'), dom.videoPanel];
+    advancedSections.forEach(section => section?.classList.toggle('content-disabled', !isAdvancedEnabled));
+    const advancedButtons = [dom.captionBtn, dom.downloadLink, dom.regenerateBtn, dom.suggestBtn, dom.variationBtn, dom.fixCharacterBtn, dom.upscaleBtn, dom.generateScriptBtn, dom.generateFinalTakeBtn, dom.magicEditBtn, dom.applyTextBtn, dom.improveTextBtn, ...dom.getAll('#edit-buttons-grid .modal-trigger')];
+    advancedButtons.forEach(btn => {
         if(btn) {
             if(btn.tagName === 'A') {
-                 btn.classList.toggle('pointer-events-none', !isEnabled);
-                 btn.classList.toggle('opacity-50', !isEnabled);
+                 btn.classList.toggle('pointer-events-none', !isAdvancedEnabled);
+                 btn.classList.toggle('opacity-50', !isAdvancedEnabled);
             } else {
-                (btn as HTMLButtonElement).disabled = !isEnabled;
-                btn.classList.toggle('btn-disabled', !isEnabled);
+                (btn as HTMLButtonElement).disabled = !isAdvancedEnabled;
+                btn.classList.toggle('btn-disabled', !isAdvancedEnabled);
             }
         }
     });
+    dom.getAll('#format-selector input').forEach(input => { (input as HTMLInputElement).disabled = !isAdvancedEnabled; });
 
-    dom.getAll('#format-selector input').forEach(input => {
-        (input as HTMLInputElement).disabled = !isEnabled;
+    // Quick Panel
+    dom.quickEditionsPanel?.classList.toggle('content-disabled', !isQuickEnabled);
+    dom.quickPostGenerationActions?.classList.toggle('hidden', !isQuickEnabled);
+    const quickButtons = [dom.quickRegenerateBtn, dom.quickSuggestBtn, dom.quickVariationBtn, dom.quickFixCharacterBtn, dom.quickUpscaleBtn, dom.quickMagicEditBtn, dom.quickCaptionBtn, dom.quickApplyTextBtn, dom.quickImproveTextBtn, ...dom.getAll('#quick-edit-buttons-grid .modal-trigger')];
+    quickButtons.forEach(btn => {
+        if (btn) {
+            (btn as HTMLButtonElement).disabled = !isQuickEnabled;
+            btn.classList.toggle('btn-disabled', !isQuickEnabled);
+        }
     });
+    if (dom.quickDownloadLink) {
+        dom.quickDownloadLink.classList.toggle('pointer-events-none', !isQuickEnabled);
+        dom.quickDownloadLink.classList.toggle('opacity-50', !isQuickEnabled);
+    }
+    dom.getAll('#quick-format-selector input').forEach(input => { (input as HTMLInputElement).disabled = !isQuickEnabled; });
 
     updateFixCharacterButton();
-}
-
-export function showLoader(text = "A processar...", element = dom.imageLoader) {
-    const loaderTextEl = element.querySelector('span');
-    if(loaderTextEl) loaderTextEl.textContent = text;
-    element.classList.remove('hidden');
-    element.classList.add('flex');
-}
-
-export function hideLoader(element = dom.imageLoader) {
-    element.classList.add('hidden');
-    element.classList.remove('flex');
 }
 
 export function hideError() {
@@ -221,11 +320,11 @@ export function showError(message: string) {
     dom.errorMessage.classList.remove('hidden');
 }
 
-export function handleDownload(e: MouseEvent) {
+export function handleDownload(e: MouseEvent, imageElement: HTMLImageElement) {
      e.preventDefault();
-     if(dom.finalImage.src && dom.finalImage.src.startsWith('data:image')) {
+     if(imageElement.src && imageElement.src.startsWith('data:image')) {
         const link = document.createElement('a');
-        link.href = dom.finalImage.src;
+        link.href = imageElement.src;
         link.download = `lookbook-ia-${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
@@ -261,9 +360,38 @@ export function renderHistory() {
     dom.historyPanel.classList.toggle('hidden', state.versionHistory.length === 0);
 }
 
+export function renderQuickHistory() {
+    dom.quickVersionHistoryContainer.innerHTML = '';
+    if (state.quickVersionHistory.length > 0) {
+        dom.quickHistoryPanel.classList.remove('hidden');
+    } else {
+        dom.quickHistoryPanel.classList.add('hidden');
+        return;
+    }
+    
+    const reversedHistory = [...state.quickVersionHistory].reverse();
+    reversedHistory.forEach((versionData) => {
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${versionData.base64}`;
+        img.className = 'history-thumbnail w-16 h-16 object-cover rounded-md cursor-pointer';
+
+        if (state.quickCreationResult && state.quickCreationResult.base64 === versionData.base64) {
+            img.classList.add('active');
+        }
+
+        img.onclick = () => {
+            if (state.isGenerating) return;
+            state.quickCreationResult = versionData;
+            displayQuickFinalImage(img.src);
+            renderQuickHistory(); // Re-render to update active state
+        };
+        dom.quickVersionHistoryContainer.appendChild(img);
+    });
+}
+
 export function hideFinalImage() {
     dom.finalImage.classList.add('hidden');
-    dom.imagePlaceholder.classList.add('hidden');
+    dom.imagePlaceholder.classList.remove('hidden');
 }
 
 export function showImagePlaceholder() {
@@ -274,6 +402,9 @@ export function displayFinalImage(imageUrl: string) {
     dom.finalImage.src = imageUrl;
     dom.downloadLink.href = imageUrl;
     dom.finalImage.classList.remove('hidden');
+    dom.imagePlaceholder.classList.add('hidden');
+    dom.finalImageDisplay.classList.remove('hidden');
+
 
     const setAspectRatio = () => {
         if (dom.finalImage.naturalHeight > 0 && dom.finalImage.naturalWidth > 0) {
@@ -297,10 +428,16 @@ export function displayFinalImage(imageUrl: string) {
         const squareRadio = dom.getEl('format-square') as HTMLInputElement;
         if(squareRadio) squareRadio.checked = true;
     }
+    const quickFormatRadio = dom.getEl(`quick-format-${formatValue.replace(':', '')}`) as HTMLInputElement;
+     if (quickFormatRadio) {
+        quickFormatRadio.checked = true;
+    } else {
+        const quickSquareRadio = dom.getEl('quick-format-square') as HTMLInputElement;
+        if(quickSquareRadio) quickSquareRadio.checked = true;
+    }
 }
 
 export function resetInspiration() {
-    dom.inspirationTheme.value = '';
     dom.inspirationUpload.value = '';
     dom.inspirationPreview.classList.add('hidden');
     dom.inspirationPlaceholder.classList.remove('hidden');
@@ -348,19 +485,21 @@ export function displayCaptionError(message: string) {
     dom.captionList.innerHTML = `<p class="text-red-400">${message}</p>`;
 }
 
-export function displaySuggestions(suggestions: string[], onClick: (suggestion: string) => void) {
-    dom.suggestionsList.innerHTML = '';
+export function displaySuggestions(suggestions: string[], listElement: HTMLElement, onClick: (suggestion: string) => void) {
+    listElement.innerHTML = '';
     suggestions.forEach(suggestion => {
         const li = document.createElement('li');
         li.textContent = `- ${suggestion}`;
         li.className = 'cursor-pointer p-1 rounded hover:bg-gray-700 suggestion-item';
         li.onclick = () => onClick(suggestion);
-        dom.suggestionsList.appendChild(li);
+        listElement.appendChild(li);
     });
 }
 
 export function hideScriptResult() {
     dom.scriptResultContainer.classList.add('hidden');
+    dom.finalTakeImage.classList.add('hidden');
+    dom.finalTakeActions.classList.add('hidden');
 }
 
 export function displayScriptResult(summary: string, script: string) {
@@ -376,18 +515,23 @@ export function handleCopyScript() {
     });
 }
 
-export function showFinalTakeLoader(show: boolean) {
-    if (show) {
-        showLoader("A gerar cena final...", dom.finalTakeLoader);
-        dom.finalTakeImage.classList.add('hidden');
-    } else {
-        hideLoader(dom.finalTakeLoader);
-    }
-}
-
 export function displayFinalTakeImage(src: string) {
     dom.finalTakeImage.src = src;
     dom.finalTakeImage.classList.remove('hidden');
+    dom.downloadFinalTakeLink.href = src;
+    dom.finalTakeActions.classList.remove('hidden');
+}
+
+export function handleFinalTakeDownload(e: MouseEvent) {
+     e.preventDefault();
+     if(dom.finalTakeImage.src && dom.finalTakeImage.src.startsWith('data:image')) {
+        const link = document.createElement('a');
+        link.href = dom.finalTakeImage.src;
+        link.download = `lookbook-ia-final-take-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+     }
 }
 
 export function openModal(type: string) {
@@ -424,15 +568,6 @@ export function updateModalImagePreview(src: string) {
     dom.modalImagePlaceholder.classList.add('hidden');
 }
 
-export function setPromptLoading(isLoading: boolean) {
-    if (isLoading) {
-        dom.promptBaseTextarea.value = 'A gerar descrição com base nos componentes...';
-        dom.promptBaseTextarea.disabled = true;
-    } else {
-        dom.promptBaseTextarea.disabled = false;
-    }
-}
-
 export function updateLivePromptPreview() {
     const intention = dom.intentionSelector.options[dom.intentionSelector.selectedIndex].text;
     const style = dom.styleSelector.options[dom.styleSelector.selectedIndex].text;
@@ -452,6 +587,10 @@ export function updateFixCharacterButton() {
     const isLocked = !!state.lockedCharacterImage;
     dom.fixCharacterBtn.classList.toggle('locked', isLocked);
     dom.fixCharacterBtn.textContent = isLocked ? '✨ Rosto Fixo' : '✨ Fixar Rosto';
+    if(dom.quickFixCharacterBtn) {
+        dom.quickFixCharacterBtn.classList.toggle('locked', isLocked);
+        dom.quickFixCharacterBtn.textContent = isLocked ? '✨ Rosto Fixo' : '✨ Fixar Rosto';
+    }
 }
 
 export function openLoadProjectModal(loadCallback: (key: string) => void) {
@@ -492,19 +631,12 @@ export function syncCharacterComponentFromState() {
     const compState = state.char;
     const id = 'char';
     const textarea = dom.getEl(`${id}-textarea`) as HTMLTextAreaElement;
-    const card = textarea.closest('.bg-gray-800\\/50');
 
     textarea.value = compState.text || '';
     if (compState.image) {
         updateComponentPreview(id, `data:image/png;base64,${compState.image}`);
-        (card.querySelector(`button[data-type="image"]`) as HTMLElement).click();
     } else {
         clearComponentPreview(id);
-        if (compState.text) {
-             (card.querySelector(`button[data-type="text"]`) as HTMLElement).click();
-        } else {
-             (card.querySelector(`button[data-type="image"]`) as HTMLElement).click();
-        }
     }
 
     const framingRadios = document.querySelectorAll<HTMLInputElement>('input[name="char-framing"]');
@@ -528,19 +660,12 @@ export function syncUIFromState() {
         if (id === 'char' || id === 'ref') return;
         const compState = state[id];
         const textarea = dom.getEl(`${id}-textarea`) as HTMLTextAreaElement;
-        const card = textarea.closest('.bg-gray-800\\/50');
 
         textarea.value = compState.text || '';
         if (compState.image) {
             updateComponentPreview(id, `data:image/png;base64,${compState.image}`);
-            (card.querySelector(`button[data-type="image"]`) as HTMLElement).click();
         } else {
             clearComponentPreview(id);
-            if (compState.text) {
-                (card.querySelector(`button[data-type="text"]`) as HTMLElement).click();
-            } else {
-                (card.querySelector(`button[data-type="image"]`) as HTMLElement).click();
-            }
         }
     });
     if (state.ref.image) {
@@ -559,13 +684,11 @@ export function syncUIFromState() {
         const lastVersion = state.versionHistory[state.versionHistory.length - 1];
         displayFinalImage(`data:image/png;base64,${lastVersion.base64}`);
         renderHistory();
-        updatePostGenerationButtons(true);
+        updatePostGenerationButtons(true, state.quickCreationResult.base64 != null);
     } else {
-        dom.finalImage.src = '';
-        dom.finalImage.classList.add('hidden');
-        dom.historyPanel.classList.add('hidden');
+        hideFinalImage();
         showImagePlaceholder();
-        updatePostGenerationButtons(false);
+        updatePostGenerationButtons(false, state.quickCreationResult.base64 != null);
     }
      updateArtDirectionAccess();
      updateComponentLockState();
@@ -776,4 +899,98 @@ export function openSaveCharacterModal(defaultName: string) {
 
 export function closeSaveCharacterModal() {
     dom.saveCharacterModal.classList.add('opacity-0', 'pointer-events-none');
+}
+
+// --- Quick Creation Panel ---
+export function toggleQuickCreationPanel() {
+    const isHidden = dom.quickCreationContent.classList.toggle('hidden');
+    dom.quickCreationChevronUp.classList.toggle('hidden', isHidden);
+    dom.quickCreationChevronDown.classList.toggle('hidden', !isHidden);
+}
+
+export function toggleQuickEditionsPanel() {
+    const isHidden = dom.quickEditionsPanel.classList.toggle('hidden');
+    dom.quickEditionsChevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+export function toggleQuickCreationResultPanel() {
+    const content = dom.quickCreationResultContent;
+    const header = dom.quickCreationResultHeader;
+    const isHidden = content.classList.toggle('hidden');
+    header.querySelector('.chevron-up').classList.toggle('hidden', isHidden);
+    header.querySelector('.chevron-down').classList.toggle('hidden', !isHidden);
+}
+
+
+// Quick Creation Result Display
+export function hideQuickFinalImage() {
+    dom.quickFinalImage.classList.add('hidden');
+    dom.quickImagePlaceholder.classList.remove('hidden');
+    dom.quickCreationResultPanel.classList.add('hidden');
+    dom.quickPostGenerationActions.classList.add('hidden');
+    renderQuickHistory(); // Also clears history display
+}
+
+export function showQuickImagePlaceholder() {
+    dom.quickCreationResultPanel.classList.remove('hidden');
+    dom.quickImagePlaceholder.classList.remove('hidden');
+}
+
+export function displayQuickFinalImage(imageUrl: string) {
+    dom.quickCreationResultPanel.classList.remove('hidden');
+    dom.quickFinalImage.src = imageUrl;
+    dom.quickDownloadLink.href = imageUrl;
+    dom.quickFinalImage.classList.remove('hidden');
+    dom.quickImagePlaceholder.classList.add('hidden');
+
+    const setAspectRatio = () => {
+        if (dom.quickFinalImage.naturalHeight > 0 && dom.quickFinalImage.naturalWidth > 0) {
+            dom.quickFinalImageDisplay.style.aspectRatio = (dom.quickFinalImage.naturalWidth / dom.quickFinalImage.naturalHeight).toString();
+        } else {
+            dom.quickFinalImageDisplay.style.aspectRatio = '1';
+        }
+    };
+
+    dom.quickFinalImage.onload = setAspectRatio;
+    if (dom.quickFinalImage.complete && dom.quickFinalImage.naturalHeight > 0) {
+        setAspectRatio();
+    }
+}
+
+
+// --- Structured Prompt Modal ---
+export function openStructuredPromptModal() {
+    dom.structuredPromptForm.classList.add('hidden');
+    dom.structuredPromptLoader.classList.remove('hidden');
+    dom.structuredPromptModal.classList.remove('opacity-0', 'pointer-events-none');
+}
+
+export function closeStructuredPromptModal() {
+    dom.structuredPromptModal.classList.add('opacity-0', 'pointer-events-none');
+}
+
+export function displayStructuredPromptForm(data: Record<string, string>) {
+    dom.structuredPromptForm.innerHTML = '';
+    const fieldLabels: Record<string, string> = {
+        subject: 'Sujeito/Personagem',
+        action: 'Ação',
+        setting: 'Cenário/Fundo',
+        style: 'Estilo Artístico',
+        composition: 'Composição',
+        lighting: 'Iluminação',
+        colors: 'Cores',
+    };
+
+    Object.entries(fieldLabels).forEach(([key, label]) => {
+        const value = data[key] || '';
+        const field = document.createElement('div');
+        field.innerHTML = `
+            <label for="struct-${key}" class="block mb-1 text-sm font-medium text-gray-400">${label}</label>
+            <input type="text" id="struct-${key}" data-key="${key}" value="${value}" class="w-full text-sm !bg-gray-900/50">
+        `;
+        dom.structuredPromptForm.appendChild(field);
+    });
+
+    dom.structuredPromptLoader.classList.add('hidden');
+    dom.structuredPromptForm.classList.remove('hidden');
 }

@@ -2,6 +2,7 @@ export const getEl = (id: string): HTMLElement => document.getElementById(id);
 export const getAll = (selector: string): NodeListOf<HTMLElement> => document.querySelectorAll(selector);
 
 // --- Global DOM References ---
+export const toastContainer = getEl('toast-container');
 export const componentGrid = getEl('component-grid');
 export const promptDetailsSection = getEl('prompt-details-section');
 export const artDirectionContent = getEl('art-direction-content');
@@ -19,8 +20,6 @@ export const finalImageDisplay = getEl('final-image-display');
 export const finalImage = getEl('final-image') as HTMLImageElement;
 export const imagePlaceholder = getEl('image-placeholder');
 export const downloadLink = getEl('download-link') as HTMLAnchorElement;
-export const imageLoader = getEl('image-loader');
-export const loaderText = getEl('loader-text');
 export const errorMessage = getEl('error-message');
 export const editPrompt = getEl('edit-prompt') as HTMLInputElement;
 export const regenerateBtn = getEl('regenerate-btn') as HTMLButtonElement;
@@ -65,9 +64,68 @@ export const scriptPromptEn = getEl('script-prompt-en') as HTMLTextAreaElement;
 export const copyScriptBtn = getEl('copy-script-btn') as HTMLButtonElement;
 export const generateFinalTakeBtn = getEl('generate-final-take-btn') as HTMLButtonElement;
 export const finalTakeDisplay = getEl('final-take-display');
-export const finalTakeLoader = getEl('final-take-loader');
 export const finalTakeImage = getEl('final-take-image') as HTMLImageElement;
 export const postGenerationActions = getEl('post-generation-actions');
+export const finalTakeActions = getEl('final-take-actions');
+export const downloadFinalTakeLink = getEl('download-final-take-link') as HTMLAnchorElement;
+
+// Add Text Inputs
+export const addTextInput = getEl('add-text-input') as HTMLInputElement;
+export const improveTextBtn = getEl('improve-text-btn') as HTMLButtonElement;
+export const applyTextBtn = getEl('apply-text-btn') as HTMLButtonElement;
+export const quickAddTextInput = getEl('quick-add-text-input') as HTMLInputElement;
+export const quickImproveTextBtn = getEl('quick-improve-text-btn') as HTMLButtonElement;
+export const quickApplyTextBtn = getEl('quick-apply-text-btn') as HTMLButtonElement;
+
+// Quick Creation
+export const simplePromptTextarea = getEl('simple-prompt-textarea') as HTMLTextAreaElement;
+export const improvePromptBtn = getEl('improve-prompt-btn') as HTMLButtonElement;
+export const structurePromptBtn = getEl('structure-prompt-btn') as HTMLButtonElement;
+export const simpleImageUploadsContainer = getEl('simple-image-uploads');
+export const quickGenerateImageBtn = getEl('quick-generate-image-btn') as HTMLButtonElement;
+export const quickEditImageUploadsContainer = getEl('quick-edit-image-uploads');
+
+// Quick Creation Toggle
+export const quickCreationHeader = getEl('quick-creation-header');
+export const toggleQuickCreationBtn = getEl('toggle-quick-creation-btn');
+export const quickCreationContent = getEl('quick-creation-content');
+export const quickCreationChevronUp = getEl('quick-creation-chevron-up');
+export const quickCreationChevronDown = getEl('quick-creation-chevron-down');
+
+// Quick Creation Result Panel
+export const quickCreationResultPanel = getEl('quick-creation-result-panel');
+export const quickCreationResultHeader = getEl('quick-creation-result-header');
+export const quickCreationResultContent = getEl('quick-creation-result-content');
+export const quickFinalImageDisplay = getEl('quick-final-image-display');
+export const quickFinalImage = getEl('quick-final-image') as HTMLImageElement;
+export const quickImagePlaceholder = getEl('quick-image-placeholder');
+export const quickHistoryPanel = getEl('quick-history-panel');
+export const quickVersionHistoryContainer = getEl('quick-version-history-container');
+export const quickPostGenerationActions = getEl('quick-post-generation-actions');
+export const quickCaptionBtn = getEl('quick-caption-btn') as HTMLButtonElement;
+export const quickDownloadLink = getEl('quick-download-link') as HTMLAnchorElement;
+
+
+// Quick Editions
+export const toggleQuickEditionsBtn = getEl('toggle-quick-editions-btn');
+export const quickEditionsPanel = getEl('quick-editions-panel');
+export const quickEditionsChevron = getEl('quick-editions-chevron');
+export const quickFormatSelector = getEl('quick-format-selector');
+export const quickEditPrompt = getEl('quick-edit-prompt') as HTMLInputElement;
+export const quickRegenerateBtn = getEl('quick-regenerate-btn') as HTMLButtonElement;
+export const quickSuggestBtn = getEl('quick-suggest-btn') as HTMLButtonElement;
+export const quickSuggestionsList = getEl('quick-suggestions-list');
+export const quickVariationBtn = getEl('quick-variation-btn') as HTMLButtonElement;
+export const quickFixCharacterBtn = getEl('quick-fix-character-btn') as HTMLButtonElement;
+export const quickUpscaleBtn = getEl('quick-upscale-btn') as HTMLButtonElement;
+export const quickMagicEditBtn = getEl('quick-magic-edit-btn') as HTMLButtonElement;
+
+// Structured Prompt Modal
+export const structuredPromptModal = getEl('structured-prompt-modal');
+export const structuredPromptLoader = getEl('structured-prompt-loader');
+export const structuredPromptForm = getEl('structured-prompt-form');
+export const structuredPromptCancelBtn = getEl('structured-prompt-cancel-btn');
+export const structuredPromptConfirmBtn = getEl('structured-prompt-confirm-btn');
 
 // New DOM elements
 export const saveProjectBtn = getEl('save-project-btn') as HTMLButtonElement;

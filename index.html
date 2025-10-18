@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estúdio de Moda com IA v23</title>
+    <title>Estúdio de Moda com IA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
@@ -132,16 +132,16 @@
         }
 
         /* Primary Action Button */
-        #generate-image-btn {
+        #generate-image-btn, #quick-generate-image-btn {
             background: linear-gradient(to right, #7C3AED, #A78BFA);
             border: none;
             box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
         }
-        #generate-image-btn:hover {
+        #generate-image-btn:hover, #quick-generate-image-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
         }
-        #generate-image-btn:disabled {
+        #generate-image-btn:disabled, #quick-generate-image-btn:disabled {
             background: #4B5563;
             opacity: 0.6;
             cursor: not-allowed;
@@ -150,26 +150,28 @@
         }
 
         /* Secondary/Tertiary Buttons */
-        #regenerate-btn, #fix-character-btn.locked {
+        #regenerate-btn, #fix-character-btn.locked, #quick-regenerate-btn, #quick-fix-character-btn.locked, #apply-text-btn, #quick-apply-text-btn {
             background-color: var(--color-accent-primary);
         }
-        #regenerate-btn:hover, #fix-character-btn.locked:hover {
+        #regenerate-btn:hover, #fix-character-btn.locked:hover, #quick-regenerate-btn:hover, #quick-fix-character-btn.locked:hover, #apply-text-btn:hover, #quick-apply-text-btn:hover {
             background-color: var(--color-accent-primary-hover);
         }
 
-        #caption-btn, #inspire-btn, #generate-script-btn, #generate-scene-description-btn {
+        #caption-btn, #inspire-btn, #generate-script-btn, #generate-scene-description-btn,
+        #quick-caption-btn, #improve-text-btn, #quick-improve-text-btn {
             background-color: var(--color-accent-secondary);
             color: var(--color-bg-deep);
         }
-        #caption-btn:hover, #inspire-btn:hover, #generate-script-btn:hover, #generate-scene-description-btn:hover {
+        #caption-btn:hover, #inspire-btn:hover, #generate-script-btn:hover, #generate-scene-description-btn:hover,
+        #quick-caption-btn:hover, #improve-text-btn:hover, #quick-improve-text-btn:hover {
             background-color: var(--color-accent-secondary-hover);
         }
         
-        #edit-buttons-grid button, #fix-character-btn {
+        #edit-buttons-grid button, #fix-character-btn, #quick-edit-buttons-grid button, #quick-fix-character-btn {
              background-color: var(--color-bg-med);
             border: 1px solid var(--color-border);
         }
-        #edit-buttons-grid button:hover, #fix-character-btn:hover {
+        #edit-buttons-grid button:hover, #fix-character-btn:hover, #quick-edit-buttons-grid button:hover, #quick-fix-character-btn:hover {
             background-color: var(--color-bg-light);
             border-color: var(--color-text-secondary);
         }
@@ -222,6 +224,31 @@
             filter: blur(1px);
             transition: opacity 0.3s, filter 0.3s;
         }
+
+        /* Toasts */
+        .toast {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 0.3s, transform 0.3s;
+            min-width: 250px;
+        }
+        .toast.fade-out {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        .toast-loading { background-color: var(--color-bg-light); border-left: 4px solid var(--color-accent-primary); }
+        .toast-success { background-color: #166534; /* Green 800 */ border-left: 4px solid #22c55e; /* Green 500 */ }
+        .toast-error { background-color: #991b1b; /* Red 800 */ border-left: 4px solid var(--color-error); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     </style>
     <script type="importmap">
     {
@@ -256,11 +283,154 @@
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Coluna de Entradas (Esquerda) -->
             <div id="upload-panel" class="flex flex-col gap-6">
+                <div class="bg-gray-800/50 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-4 cursor-pointer" id="quick-creation-header">
+                        <h2 class="text-2xl font-bold text-gray-200 concept-title">🚀 Criação Rápida</h2>
+                        <button id="toggle-quick-creation-btn" class="p-1 rounded-full hover:bg-gray-700">
+                            <svg id="quick-creation-chevron-up" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                            <svg id="quick-creation-chevron-down" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 hidden"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                    </div>
+                    <div id="quick-creation-content" class="space-y-4">
+                        <div>
+                            <label for="simple-prompt-textarea" class="block mb-2 text-sm font-medium text-gray-300">Seu Prompt</label>
+                            <textarea id="simple-prompt-textarea" rows="4" class="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5" placeholder="Ex: um astronauta surfando numa onda cósmica, estilo synthwave"></textarea>
+                            <div class="flex gap-2 mt-2">
+                                <button id="improve-prompt-btn" class="flex-1 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold px-4 py-2 rounded-lg transition-colors">Melhorar Prompt</button>
+                                <button id="structure-prompt-btn" class="flex-1 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold px-4 py-2 rounded-lg transition-colors">Estruturar Prompt</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-300">Imagens de Referência (Opcional, até 3)</label>
+                            <div id="simple-image-uploads" class="grid grid-cols-3 gap-2">
+                                <!-- Upload boxes will be generated here by ui.ts -->
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <button id="quick-generate-image-btn" class="w-full font-bold py-3 px-8 rounded-lg" disabled>Gerar Imagem</button>
+                        </div>
+                        
+                        <div class="pt-4 border-t border-gray-700/50">
+                             <button id="toggle-quick-editions-btn" class="flex justify-between items-center w-full text-left p-2 rounded-lg hover:bg-gray-700/50">
+                                <h3 class="text-xl font-bold text-gray-200 concept-title">🎨 Edições e Refinamento</h3>
+                                <svg id="quick-editions-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 transition-transform"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div id="quick-editions-panel" class="hidden space-y-4 mt-4 p-2">
+                                <!-- DUPLICATED EDITING CONTROLS START -->
+                                <div id="quick-refinement-content" class="space-y-4">
+                                    <div id="quick-format-container">
+                                        <label class="block mb-2 text-sm font-medium text-gray-300">Formato</label>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs" id="quick-format-selector">
+                                            <div class="radio-option"><input type="radio" id="quick-format-square" name="quick-format" value="1:1" class="hidden" checked><label for="quick-format-square" class="block cursor-pointer text-center p-3 border rounded-md">Feed (1:1)</label></div>
+                                            <div class="radio-option"><input type="radio" id="quick-format-portrait" name="quick-format" value="4:5" class="hidden"><label for="quick-format-portrait" class="block cursor-pointer text-center p-3 border rounded-md">Feed (4:5)</label></div>
+                                            <div class="radio-option"><input type="radio" id="quick-format-story" name="quick-format" value="9:16" class="hidden"><label for="quick-format-story" class="block cursor-pointer text-center p-3 border rounded-md">Story/Reels (9:16)</label></div>
+                                            <div class="radio-option"><input type="radio" id="quick-format-landscape" name="quick-format" value="16:9" class="hidden"><label for="quick-format-landscape" class="block cursor-pointer text-center p-3 border rounded-md">YouTube (16:9)</label></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="quick-edit-prompt" class="block text-sm font-medium text-gray-300">Edição por prompt</label>
+                                        <div class="flex gap-2 mt-1">
+                                            <input type="text" id="quick-edit-prompt" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Ex: 'mude a cor da camisa para azul'">
+                                            <button id="quick-regenerate-btn" class="font-semibold px-4 py-2 rounded-lg">Enviar</button>
+                                        </div>
+                                         <div class="mt-2">
+                                            <label class="block mb-2 text-xs font-medium text-gray-400">Imagens para Edição (Opcional)</label>
+                                            <div id="quick-edit-image-uploads" class="grid grid-cols-3 gap-2">
+                                                <!-- Quick Edit Upload boxes will be generated here by ui.ts -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="suggestions-container">
+                                        <button id="quick-suggest-btn" class="text-sm text-indigo-400 hover:text-indigo-300 w-full text-left">Sugerir Edições com IA</button>
+                                        <div id="quick-suggestions-list" class="mt-2 text-sm text-gray-400 space-y-1"></div>
+                                    </div>
+                                    <div>
+                                        <label for="quick-add-text-input" class="block text-sm font-medium text-gray-300">Adicionar Texto à Imagem</label>
+                                        <div class="flex gap-2 mt-1">
+                                            <input type="text" id="quick-add-text-input" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Ex: 'Promoção'">
+                                            <button id="quick-improve-text-btn" class="font-semibold px-4 py-2 rounded-lg text-nowrap">✨ Melhorar</button>
+                                            <button id="quick-apply-text-btn" class="font-semibold px-4 py-2 rounded-lg">Aplicar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h4 class="text-lg font-bold pt-4 border-t border-gray-700/50 text-gray-300">Edição Avançada</h4>
+                                <div id="quick-edit-buttons-container" class="space-y-2">
+                                    <div class="flex flex-wrap gap-2 text-sm">
+                                        <button id="quick-variation-btn" class="flex-1 p-2 rounded-lg">Criar Variação</button>
+                                        <button id="quick-fix-character-btn" class="flex-1 p-2 rounded-lg">✨ Fixar Rosto</button>
+                                        <button id="quick-upscale-btn" class="flex-1 p-2 rounded-lg">Melhorar Qualidade</button>
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm" id="quick-edit-buttons-grid">
+                                        <button data-modal-type="char" class="modal-trigger p-2 rounded-lg">Trocar Rosto</button>
+                                        <button data-modal-type="pose" class="modal-trigger p-2 rounded-lg">Trocar Pose</button>
+                                        <button data-modal-type="cloth" class="modal-trigger p-2 rounded-lg">Trocar Roupa</button>
+                                        <button data-modal-type="bg" class="modal-trigger p-2 rounded-lg">Trocar Cenário</button>
+                                        <button id="quick-magic-edit-btn" class="col-span-full p-2 rounded-lg">🪄 Edição Mágica (Inpainting)</button>
+                                    </div>
+                                </div>
+                                <!-- DUPLICATED EDITING CONTROLS END -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="quick-creation-result-panel" class="hidden">
+                    <div class="bg-gray-800/50 p-4 rounded-lg">
+                        <div id="quick-creation-result-header" class="flex justify-between items-center mb-4 cursor-pointer">
+                            <h2 class="text-xl font-bold text-gray-200">Resultado da Criação Rápida</h2>
+                            <button class="p-1 rounded-full hover:bg-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 chevron-up"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 chevron-down hidden"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                        </div>
+                        <div id="quick-creation-result-content">
+                            <div id="quick-final-image-display" class="bg-gray-800 w-full rounded-lg flex items-center justify-center relative transition-all" style="aspect-ratio: 1/1;">
+                                <div id="quick-image-placeholder" class="text-gray-500 flex items-center justify-center h-full">O seu resultado aparecerá aqui</div>
+                                <img id="quick-final-image" class="hidden w-full h-full object-contain rounded-lg" alt="Imagem gerada pela IA na Criação Rápida">
+                            </div>
+                             <div id="quick-history-panel" class="mt-4 hidden">
+                                <h4 class="text-sm font-semibold mb-2 text-gray-400">Histórico Rápido</h4>
+                                <div id="quick-version-history-container" class="flex items-center gap-2 overflow-x-auto pb-2">
+                                </div>
+                            </div>
+                             <div id="quick-post-generation-actions" class="flex flex-wrap gap-2 mt-4">
+                                <button id="quick-caption-btn" class="flex-1 font-bold py-2 px-4 rounded-lg transition">✨ Criar Legenda</button>
+                                <a id="quick-download-link" class="flex-1 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition text-center" download="lookbook-ia-rapido.png">Baixar Imagem</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                  <div class="bg-gray-800/50 p-4 rounded-lg">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-200 text-center concept-title">✨ Assistente de Conceitos</h2>
-                    <div class="space-y-2">
-                         <div class="flex gap-2">
-                            <input type="text" id="inspiration-theme" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Digite um tema (ex: verão na praia)">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-200 text-center concept-title">✨ Assistente de Conceitos para Instagram</h2>
+                    <div class="space-y-4">
+                         <div>
+                            <h4 class="text-sm font-medium text-gray-400 mb-2 text-center">Tipo de Personagem</h4>
+                            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 text-xs" id="concept-character-type-selector">
+                                <div class="radio-option">
+                                    <input type="radio" id="concept-char-woman" name="concept-character-type" value="mulher" class="hidden" checked>
+                                    <label for="concept-char-woman" class="block cursor-pointer text-center p-2 border rounded-md w-full">Mulher</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="concept-char-man" name="concept-character-type" value="homem" class="hidden">
+                                    <label for="concept-char-man" class="block cursor-pointer text-center p-2 border rounded-md w-full">Homem</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="concept-char-girl" name="concept-character-type" value="menina" class="hidden">
+                                    <label for="concept-char-girl" class="block cursor-pointer text-center p-2 border rounded-md w-full">Menina</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="concept-char-boy" name="concept-character-type" value="menino" class="hidden">
+                                    <label for="concept-char-boy" class="block cursor-pointer text-center p-2 border rounded-md w-full">Menino</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="concept-char-none" name="concept-character-type" value="sem personagem" class="hidden">
+                                    <label for="concept-char-none" class="block cursor-pointer text-center p-2 border rounded-md w-full">Nenhum</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="inspiration-theme" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Descreva sua campanha ou produto (ex: 'nova coleção de verão')">
                         </div>
                         <label for="inspiration-upload" class="upload-box w-full h-32 rounded-lg flex items-center justify-center cursor-pointer p-2">
                             <div id="inspiration-preview-container" class="text-center text-gray-500 w-full h-full">
@@ -269,20 +439,16 @@
                             </div>
                         </label>
                         <input type="file" id="inspiration-upload" class="hidden" accept="image/*">
-                        <button id="inspire-btn" class="w-full bg-teal-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-teal-700 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>Gerar Ideia</button>
+                        <button id="inspire-btn" class="w-full bg-teal-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-teal-700 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>Gerar Ideias para Post</button>
                     </div>
                 </div>
                 <div>
-                    <h2 class="text-3xl font-bold mb-6 text-gray-200">1. Componentes da Cena</h2>
+                    <h2 class="text-3xl font-bold mb-6 text-gray-200">1. Componentes da Cena (Avançado)</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="component-grid">
                         <div class="bg-gray-800/50 p-4 rounded-lg pulse-once" id="char-component-card">
                             <h3 class="text-lg font-semibold mb-3 text-center text-gray-300 flex justify-center items-center gap-2">
                                 <span>Personagem (Obrigatório)</span>
                             </h3>
-                            <nav class="flex justify-center mb-3">
-                                <button data-id="char" data-type="image" class="tab-btn active px-4 py-2 text-sm font-medium">Imagem</button>
-                                <button data-id="char" data-type="text" class="tab-btn px-4 py-2 text-sm font-medium">Texto</button>
-                            </nav>
                             <div class="mb-3">
                                 <h4 class="text-sm font-medium text-gray-400 mb-2 text-center">Enquadramento</h4>
                                 <div class="grid grid-cols-2 gap-2 text-xs">
@@ -308,8 +474,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="input-container h-48">
-                                <label for="char-upload" class="upload-box w-full h-full rounded-lg flex items-center justify-center cursor-pointer p-2 relative group">
+                            <div class="space-y-3">
+                                <label for="char-upload" class="upload-box w-full h-40 rounded-lg flex items-center justify-center cursor-pointer p-2 relative group">
                                     <div class="text-center text-gray-500 w-full h-full">
                                         <img id="char-preview" class="hidden w-full h-full rounded-md" />
                                         <span id="char-placeholder" class="flex items-center justify-center h-full">Clique para carregar</span>
@@ -321,7 +487,7 @@
                                     </div>
                                 </label>
                                 <input type="file" id="char-upload" class="hidden" accept="image/*">
-                                <textarea id="char-textarea" class="hidden w-full h-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5" placeholder="Descreva (opcional)..."></textarea>
+                                <textarea id="char-textarea" rows="2" class="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5" placeholder="Descreva (opcional)..."></textarea>
                             </div>
                             <div id="save-character-container" class="mt-4">
                                 <div id="save-character-placeholder" class="text-center text-sm text-gray-400 p-4 border border-dashed border-gray-600 rounded-lg">
@@ -429,7 +595,6 @@
 
                 <div id="image-generation-section" class="mt-6">
                     <div id="final-image-display" class="bg-gray-800 w-full rounded-lg flex items-center justify-center relative transition-all" style="aspect-ratio: 1/1;">
-                        <div id="image-loader" class="hidden flex-col items-center text-center"><div class="loader mb-3"></div><span id="loader-text"></span></div>
                         <div id="image-placeholder" class="text-gray-500 flex items-center justify-center h-full">A sua imagem aparecerá aqui</div>
                         <img id="final-image" class="hidden w-full h-full object-contain rounded-lg" alt="Imagem gerada pela IA">
                     </div>
@@ -462,12 +627,20 @@
                             <label for="edit-prompt" class="block text-sm font-medium text-gray-300">Edição por prompt</label>
                             <div class="flex gap-2 mt-1">
                                 <input type="text" id="edit-prompt" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Ex: 'mude a cor da camisa para azul'">
-                                <button id="regenerate-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Regenerar</button>
+                                <button id="regenerate-btn" class="font-semibold px-4 py-2 rounded-lg">Enviar</button>
                             </div>
                         </div>
                         <div id="suggestions-container">
                              <button id="suggest-btn" class="text-sm text-indigo-400 hover:text-indigo-300 w-full text-left">Sugerir Edições com IA</button>
                              <div id="suggestions-list" class="mt-2 text-sm text-gray-400 space-y-1"></div>
+                        </div>
+                        <div>
+                            <label for="add-text-input" class="block text-sm font-medium text-gray-300">Adicionar Texto à Imagem</label>
+                            <div class="flex gap-2 mt-1">
+                                <input type="text" id="add-text-input" class="block w-full text-sm text-gray-300 bg-gray-700 rounded-lg border border-gray-600 p-2.5" placeholder="Ex: 'Promoção'">
+                                <button id="improve-text-btn" class="font-semibold px-4 py-2 rounded-lg text-nowrap">✨ Melhorar</button>
+                                <button id="apply-text-btn" class="font-semibold px-4 py-2 rounded-lg">Aplicar</button>
+                            </div>
                         </div>
                     </div>
 
@@ -497,15 +670,25 @@
                                     <option value="8">8 segundos (1 cena)</option>
                                     <option value="16">16 segundos (2 cenas)</option>
                                     <option value="24">24 segundos (3 cenas)</option>
+                                    <option value="32">32 segundos (4 cenas)</option>
+                                    <option value="40">40 segundos (5 cenas)</option>
+                                    <option value="48">48 segundos (6 cenas)</option>
+                                    <option value="56">56 segundos (7 cenas)</option>
+                                    <option value="64">64 segundos (8 cenas)</option>
                                 </select>
                             </div>
                             <div>
                                 <label for="video-style-selector" class="block mb-2 text-sm font-medium text-gray-300">Estilo da Cena</label>
                                 <select id="video-style-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
-                                    <option value="um movimento de câmara lento e suave, revelando o produto/look.">Movimento Lento (Reveal)</option>
+                                    <option value="estilo ugc (tik tok)">Estilo UGC (TikTok)</option>
+                                    <option value="gravação de drone aérea">Gravação de Drone Aérea</option>
+                                    <option value="câmera profissional em trilho (dolly shot)">Câmera em Trilho (Dolly)</option>
+                                    <option value="câmera de mão, filmagem em movimento (handheld)">Câmera de Mão (em movimento)</option>
+                                    <option value="câmera lenta dramática (slow motion)">Câmera Lenta (Slow Motion)</option>
+                                    <option value="câmera estática em tripé (static shot)">Câmera Fixa (Tripé)</option>
+                                    <option value="time-lapse acelerado">Time-lapse</option>
                                     <option value="um close-up extremo no produto, com o fundo a mover-se.">Foco no Produto</option>
                                     <option value="um plano panorâmico do cenário, terminando no personagem.">Plano Panorâmico</option>
-                                    <option value="uma cena de ação dinâmica, com cortes rápidos.">Cena Dinâmica</option>
                                 </select>
                             </div>
                             <button id="generate-script-btn" class="w-full bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-700">Gerar Roteiro de Vídeo</button>
@@ -526,8 +709,10 @@
                                     <p class="text-xs text-gray-500 mb-2">A sua imagem atual será a cena inicial. Gere a imagem final da cena descrita no roteiro.</p>
                                     <button id="generate-final-take-btn" class="w-full bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-orange-700">Gerar Cena Final</button>
                                     <div id="final-take-display" class="bg-gray-900 w-full rounded-lg flex items-center justify-center relative transition-all mt-4" style="aspect-ratio: 1 / 1;">
-                                         <div id="final-take-loader" class="hidden flex-col items-center text-center"><div class="loader mb-3"></div><span>Gerando cena final...</span></div>
                                          <img id="final-take-image" class="hidden w-full h-full object-contain rounded-lg" alt="Cena final">
+                                    </div>
+                                    <div id="final-take-actions" class="hidden flex-wrap gap-2 mt-2">
+                                        <a id="download-final-take-link" class="flex-1 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition text-center" download="lookbook-ia-final-take.png">Baixar Cena Final</a>
                                     </div>
                                 </div>
                             </div>
@@ -631,8 +816,24 @@
             </div>
         </div>
     </div>
+    <div id="structured-prompt-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold mb-4">Estruturador de Prompt</h3>
+            <div id="structured-prompt-loader" class="text-center p-8">
+                <div class="loader inline-block"></div>
+                <p class="mt-2 text-gray-400">A analisar o seu prompt...</p>
+            </div>
+            <div id="structured-prompt-form" class="hidden space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                <!-- Dynamic fields will be inserted here -->
+            </div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="structured-prompt-cancel-btn" class="text-gray-400 hover:text-white">Cancelar</button>
+                <button id="structured-prompt-confirm-btn" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700">Aplicar</button>
+            </div>
+        </div>
+    </div>
 
-
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
     <script type="module" src="index.tsx"></script>
 </body>
 </html>
